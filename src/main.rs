@@ -27,7 +27,7 @@ use libcontainer::container::{Container, ContainerStatus};
 use libcontainer::signal::Signal;
 
 type ExitCode = Arc<(Mutex<Option<(u32, DateTime<Utc>)>>, Condvar)>;
-static DEFAULT_CONTAINER_ROOT_DIR: &str = " /run/containerd/youki";
+static DEFAULT_CONTAINER_ROOT_DIR: &str = "/run/containerd/youki";
 
 pub struct MyContainer {
     exit_code: ExitCode,
@@ -36,7 +36,6 @@ pub struct MyContainer {
     stdout: String,
     stderr: String,
     bundle: String,
-    shutdown_signal: Arc<(Mutex<bool>, Condvar)>,
 
     rootdir: PathBuf,
 }
@@ -70,9 +69,13 @@ impl Instance for MyContainer {
 
     fn new(id: String, cfg: Option<&InstanceConfig<Self::E>>) -> Self {
         log::info!(">>> New instance: {}", id);
-        let cfg = cfg.unwrap(); // TODO: handle error
+        let cfg = cfg.unwrap();
         let bundle = cfg.get_bundle().unwrap_or_default();
+        log::info!(">>> Bundle: {:?}", bundle);
         let namespace = cfg.get_namespace();
+        log::info!(">>> Namespace: {:?}", namespace);
+        let rootdir = determine_rootdir(bundle.as_str(), namespace).unwrap();
+        log::info!(">>> Rootdir: {:?}", rootdir);
         MyContainer {
             id,
             exit_code: Arc::new((Mutex::new(None), Condvar::new())),
@@ -80,8 +83,7 @@ impl Instance for MyContainer {
             stdout: cfg.get_stdout().unwrap_or_default(),
             stderr: cfg.get_stderr().unwrap_or_default(),
             bundle: bundle.clone(),
-            shutdown_signal: Arc::new((Mutex::new(false), Condvar::new())),
-            rootdir: determine_rootdir(bundle.as_str(), namespace).unwrap(),
+            rootdir,
         }
     }
 
@@ -145,6 +147,7 @@ impl Instance for MyContainer {
                 if container.status() == ContainerStatus::Stopped {
                     return Err(Error::Others("container not running".into()));
                 }
+                log::error!("failed to kill container: {}", e);
                 Err(Error::Others(e.to_string()))
             }
         }
@@ -185,6 +188,9 @@ impl MyContainer {
     fn build_executor(&self) -> Result<Container> {
         let syscall = create_syscall();
         fs::create_dir_all(&self.rootdir)?;
+        // verify that roodir is created
+        assert!(self.rootdir.exists());
+
         let container = ContainerBuilder::new(self.id.clone(), syscall.as_ref())
             .with_executor(vec![Box::<DefaultExecutor>::default()])?
             .with_root_path(self.rootdir.clone())?
@@ -201,13 +207,7 @@ fn container_exists<P: AsRef<Path>>(root_path: P, container_id: &str) -> Result<
 }
 
 fn construct_container_root<P: AsRef<Path>>(root_path: P, container_id: &str) -> Result<PathBuf> {
-    let root_path = fs::canonicalize(&root_path).with_context(|| {
-        format!(
-            "failed to canonicalize {} for container {}",
-            root_path.as_ref().display(),
-            container_id
-        )
-    })?;
+    let root_path = fs::canonicalize(&root_path)?;
     Ok(root_path.join(container_id))
 }
 

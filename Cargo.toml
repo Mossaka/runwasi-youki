@@ -12,8 +12,8 @@ serde_json = "1.0"
 chrono = "~0.4"
 clap = { version = "4.1", features = ["derive", "env"] }
 containerd-shim = "0.3"
-containerd-shim-wasm = { git = "https://github.com/containerd/runwasi", branch="main" }
+containerd-shim-wasm = { git = "https://github.com/mossaka/runwasi", rev="1ce9ad3565025e2f39210507147b550365764057" }
 log = "~0.4"
-libcontainer = { git = "https://github.com/containers/youki", rev = "ef8fd59a42f119f2bd78b87ba5d7171550acca01" }
+libcontainer = { git = "https://github.com/containers/youki", rev = "1a6d1f4bd7553e971d6d787698a9732836188444" }
 nix = "0.26"
 libc = "0.2.145"

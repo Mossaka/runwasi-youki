@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "containerd-shim-wasm"
 version = "0.1.2"
-source = "git+https://github.com/containerd/runwasi?branch=main#d78959fe194a5827b01ff9c36a72cdaebc6d1323"
+source = "git+https://github.com/mossaka/runwasi?rev=1ce9ad3565025e2f39210507147b550365764057#1ce9ad3565025e2f39210507147b550365764057"
 dependencies = [
  "anyhow",
  "caps",
@@ -277,7 +277,7 @@ dependencies = [
  "libc",
  "log",
  "nix 0.26.2",
- "oci-spec 0.6.0",
+ "oci-spec 0.6.1",
  "proc-mounts",
  "protobuf 2.28.0",
  "serde",
@@ -461,6 +461,12 @@ checksum = "e51093e27b0797c359783294ca4f0a911c270184cb10f85783b118614a1501be"
 dependencies = [
  "instant",
 ]
+
+[[package]]
+name = "fastrand"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6999dc1837253364c2ebb0704ba97994bd874e8f195d665c50b7548f6ea92764"
 
 [[package]]
 name = "fixedbitset"
@@ -740,12 +746,12 @@ checksum = "f92be4933c13fd498862a9e02a3055f8a8d9c039ce33db97306fd5a6caa7f29b"
 [[package]]
 name = "libcgroups"
 version = "0.0.5"
-source = "git+https://github.com/containers/youki?rev=ef8fd59a42f119f2bd78b87ba5d7171550acca01#ef8fd59a42f119f2bd78b87ba5d7171550acca01"
+source = "git+https://github.com/containers/youki?rev=1a6d1f4bd7553e971d6d787698a9732836188444#1a6d1f4bd7553e971d6d787698a9732836188444"
 dependencies = [
  "dbus",
  "fixedbitset",
  "nix 0.26.2",
- "oci-spec 0.6.0",
+ "oci-spec 0.6.1",
  "procfs",
  "serde",
  "thiserror",
@@ -755,19 +761,19 @@ dependencies = [
 [[package]]
 name = "libcontainer"
 version = "0.0.5"
-source = "git+https://github.com/containers/youki?rev=ef8fd59a42f119f2bd78b87ba5d7171550acca01#ef8fd59a42f119f2bd78b87ba5d7171550acca01"
+source = "git+https://github.com/containers/youki?rev=1a6d1f4bd7553e971d6d787698a9732836188444#1a6d1f4bd7553e971d6d787698a9732836188444"
 dependencies = [
  "bitflags 2.3.1",
  "caps",
  "chrono",
  "clone3",
- "fastrand",
+ "fastrand 2.0.0",
  "futures",
  "libc",
  "libcgroups",
  "libseccomp",
  "nix 0.26.2",
- "oci-spec 0.6.0",
+ "oci-spec 0.6.1",
  "once_cell",
  "prctl",
  "procfs",
@@ -932,9 +938,9 @@ dependencies = [
 
 [[package]]
 name = "oci-spec"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "214b837f7dde5026f2028ead5ae720073277c19f82ff85623b142c39d4b843e7"
+checksum = "cf77d2eace1f4909b081d231d1ad3570ba3448ae95290ab701314faaee1b611a"
 dependencies = [
  "derive_builder 0.12.0",
  "getset",
@@ -1310,7 +1316,7 @@ checksum = "31c0432476357e58790aaa47a8efb0c5138f137343f3b5f23bd36a27e3b0a6d6"
 dependencies = [
  "autocfg",
  "cfg-if 1.0.0",
- "fastrand",
+ "fastrand 1.9.0",
  "redox_syscall",
  "rustix 0.37.19",
  "windows-sys 0.48.0",
