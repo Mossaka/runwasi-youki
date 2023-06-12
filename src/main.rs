@@ -1,5 +1,8 @@
 use anyhow::{bail, Context, Result};
+use nix::unistd::{dup, dup2};
 use serde::{Deserialize, Serialize};
+use std::fs::OpenOptions;
+use std::os::fd::{IntoRawFd, RawFd};
 use std::thread;
 use std::{
     fs::{self, File},
@@ -14,7 +17,7 @@ use containerd_shim_wasm::sandbox::{
     instance::{InstanceConfig, Wait},
     EngineGetter, Error, Instance, ShimCli,
 };
-use libc::{SIGINT, SIGKILL};
+use libc::{SIGINT, SIGKILL, STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
 use libcontainer::{
     container::builder::ContainerBuilder, syscall::syscall::create_syscall,
     workload::default::DefaultExecutor,
@@ -184,12 +187,46 @@ impl Instance for MyContainer {
     }
 }
 
+/// containerd can send an empty path or a non-existant path
+/// In both these cases we should just assume that the stdio stream was not setup (intentionally)
+/// Any other error is a real error.
+fn maybe_open_stdio(path: &str) -> Result<Option<RawFd>, Error> {
+    if path.is_empty() {
+        return Ok(None);
+    }
+    match OpenOptions::new().read(true).write(true).open(path) {
+        Ok(f) => Ok(Some(f.into_raw_fd())),
+        Err(err) => match err.kind() {
+            ErrorKind::NotFound => Ok(None),
+            _ => Err(err.into()),
+        },
+    }
+}
+
 impl MyContainer {
     fn build_executor(&self) -> Result<Container> {
         let syscall = create_syscall();
         fs::create_dir_all(&self.rootdir)?;
         // verify that roodir is created
         assert!(self.rootdir.exists());
+        let stdin = maybe_open_stdio(self.stdin.as_str()).context("could not open stdin")?;
+        let stdout = maybe_open_stdio(self.stdout.as_str()).context("could not open stdout")?;
+        let stderr = maybe_open_stdio(self.stderr.as_str()).context("could not open stderr")?;
+
+        if let Some(stdin) = stdin {
+            let _ = dup(STDIN_FILENO)?;
+            dup2(stdin, STDIN_FILENO)?;
+        }
+
+        if let Some(stdout) = stdout {
+            let _ = dup(STDOUT_FILENO)?;
+            dup2(stdout, STDOUT_FILENO)?;
+        }
+
+        if let Some(stderr) = stderr {
+            let _ = dup(STDERR_FILENO)?;
+            dup2(stderr, STDERR_FILENO)?;
+        }
 
         let container = ContainerBuilder::new(self.id.clone(), syscall.as_ref())
             .with_executor(vec![Box::<DefaultExecutor>::default()])?
