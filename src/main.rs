@@ -4,6 +4,8 @@ use libcontainer::workload::ExecutorError;
 use nix::unistd::{dup, dup2};
 use serde::{Deserialize, Serialize};
 use youki_wasmedge_executor;
+use youki_wasmer_executor;
+use youki_wasmtime_executor;
 use std::fs::OpenOptions;
 use std::os::fd::{IntoRawFd, RawFd};
 use std::thread;
@@ -234,6 +236,16 @@ impl MyContainer {
         let container = ContainerBuilder::new(self.id.clone(), syscall)
             .with_executor(Box::new(|spec: &Spec| -> Result<(), ExecutorError> {
                 match youki_wasmedge_executor::get_executor()(spec) {
+                    Ok(_) => return Ok(()),
+                    Err(ExecutorError::CantHandle(_)) => (),
+                    Err(err) => return Err(err),
+                }
+                match youki_wasmer_executor::get_executor()(spec) {
+                    Ok(_) => return Ok(()),
+                    Err(ExecutorError::CantHandle(_)) => (),
+                    Err(err) => return Err(err),
+                }
+                match youki_wasmtime_executor::get_executor()(spec) {
                     Ok(_) => return Ok(()),
                     Err(ExecutorError::CantHandle(_)) => (),
                     Err(err) => return Err(err),

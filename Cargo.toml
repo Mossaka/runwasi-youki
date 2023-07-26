@@ -8,6 +8,8 @@ edition = "2021"
 [workspace]
 members = [
     "crates/youki-wasmedge-executor",
+    "crates/youki-wasmer-executor",
+    "crates/youki-wasmtime-executor",
 ]
 
 [dependencies]
@@ -24,7 +26,8 @@ nix = {workspace = true}
 libc = {workspace = true}
 
 youki-wasmedge-executor = {version = "0.1.0", path = "crates/youki-wasmedge-executor"}
-wasmedge-sdk = "0.10.1"
+youki-wasmer-executor = {version = "0.1.0", path = "crates/youki-wasmer-executor"}
+youki-wasmtime-executor = {version = "0.1.0", path = "crates/youki-wasmtime-executor"}
 
 [workspace.dependencies]
 containerd-shim = {git = "https://github.com/containerd/rust-extensions", rev = "8500b4c665e0d0911b9546c00bd0bd4670cf5533" }

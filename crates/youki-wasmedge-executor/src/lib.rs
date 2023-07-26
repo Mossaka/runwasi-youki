@@ -1,5 +1,5 @@
 // ****************************************************************************************
-// * THIS FILE HAS BEN COPIED FROM:
+// * THIS FILE IS BASED ON:
 // *   https://github.com/containers/youki/blob/main/crates/youki/src/workload/wasmedge.rs
 // ****************************************************************************************
 
@@ -15,8 +15,14 @@ const EXECUTOR_NAME: &str = "wasmedge";
 
 pub fn get_executor() -> Executor {
     Box::new(|spec: &Spec| -> Result<(), ExecutorError> {
-        if !can_handle(spec) {
-            return Err(ExecutorError::CantHandle(EXECUTOR_NAME));
+        //can_handle
+        if let Some(annotations) = spec.annotations() {
+            if let Some(handler) = annotations.get("youki.wasm.handler") {
+                log::info!("Can handle {} == {}", handler.to_lowercase(), EXECUTOR_NAME);
+                if handler.to_lowercase() != EXECUTOR_NAME {
+                    return Err(ExecutorError::CantHandle(EXECUTOR_NAME));
+                }
+            }
         }
 
         tracing::debug!("executing workload with wasmedge handler");
@@ -64,20 +70,6 @@ pub fn get_executor() -> Executor {
 
         Ok(())
     })
-}
-
-fn can_handle(spec: &Spec) -> bool {
-    if let Some(annotations) = spec.annotations() {
-        if let Some(handler) = annotations.get("run.oci.handler") {
-            return handler == "wasm";
-        }
-
-        if let Some(variant) = annotations.get("module.wasm.image/variant") {
-            return variant == "compat";
-        }
-    }
-
-    false
 }
 
 fn get_args(spec: &Spec) -> &[String] {
