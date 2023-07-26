@@ -8,18 +8,23 @@ install: build
 
 .PHONY: build-app
 build-app:
-	cd py-cmd-app && docker build -t py-cmd-app:latest .
-	cd py-flask-app && docker build -t py-flask-app:latest .
+	docker build -t py-cmd-app:latest apps/py-cmd-app
+	docker build -t py-flask-app:latest apps/py-flask-app
+	docker build -t wasi-hello-world:latest apps/wasi-hello-world
 
 .PHONY: load-app
 load-app: build-app
-	mkdir -p test/out_cmd
-	mkdir -p test/out_flask
-	docker save -o test/out_flask/img.tar py-flask-app:latest
-	docker save -o test/out_cmd/img.tar py-cmd-app:latest
+	mkdir -p apps/images/out_cmd
+	mkdir -p apps/images/out_flask
+	mkdir -p apps/images/out_hello
 
-	sudo ctr images import test/out_flask/img.tar
-	sudo ctr images import test/out_cmd/img.tar
+	docker save -o apps/images/out_flask/img.tar py-flask-app:latest
+	docker save -o apps/images/out_cmd/img.tar py-cmd-app:latest
+	docker save -o apps/images/out_hello/img.tar wasi-hello-world:latest
+
+	sudo ctr images import apps/images/out_flask/img.tar
+	sudo ctr images import apps/images/out_cmd/img.tar
+	sudo ctr images import apps/images/out_hello/img.tar
 
 .PHONY: run
 run: install load-app
