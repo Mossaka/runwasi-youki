@@ -5,6 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = [
+    "crates/youki-wasmedge-executor",
+]
+
 [dependencies]
 anyhow = "1"
 serde = "1.0"
@@ -13,7 +18,20 @@ chrono = "~0.4"
 clap = { version = "4.1", features = ["derive", "env"] }
 containerd-shim = {git = "https://github.com/containerd/rust-extensions", rev = "8500b4c665e0d0911b9546c00bd0bd4670cf5533" }
 containerd-shim-wasm = { git = "https://github.com/containerd/runwasi" }
-log = "~0.4"
 libcontainer = { git = "https://github.com/containers/youki"}
+log = {workspace = true}
+nix = {workspace = true}
+libc = {workspace = true}
+
+youki-wasmedge-executor = {version = "0.1.0", path = "crates/youki-wasmedge-executor"}
+wasmedge-sdk = "0.10.1"
+
+[workspace.dependencies]
+containerd-shim = {git = "https://github.com/containerd/rust-extensions", rev = "8500b4c665e0d0911b9546c00bd0bd4670cf5533" }
+containerd-shim-wasm = { git = "https://github.com/containerd/runwasi" }
+libcontainer = { git = "https://github.com/containers/youki"}
+tracing = { version = "0.1.37", features = ["attributes"]}
+oci-spec = { version = "~0.6.2", features = ["runtime"] }
 nix = "0.26"
-libc = "0.2.145"
+libc = "0.2.147"
+log = "~0.4"

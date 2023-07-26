@@ -29,3 +29,7 @@ load-app: build-app
 .PHONY: run
 run: install load-app
 	sudo ctr run --net-host --rm --runtime=io.containerd.youki.v1 docker.io/library/py-flask-app:latest pyflask
+
+.PHONY: run-wasm
+run-wasm: install load-app
+	sudo ctr run --rm --runtime=io.containerd.youki.v1 --annotation run.oci.handler=wasm docker.io/library/wasi-hello-world:latest wasmhello /wasi-hello-world.wasm

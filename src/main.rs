@@ -1,6 +1,9 @@
 use anyhow::{bail, Context, Result};
+use libcontainer::syscall::syscall::SyscallType;
+use libcontainer::workload::ExecutorError;
 use nix::unistd::{dup, dup2};
 use serde::{Deserialize, Serialize};
+use youki_wasmedge_executor;
 use std::fs::OpenOptions;
 use std::os::fd::{IntoRawFd, RawFd};
 use std::thread;
@@ -18,8 +21,10 @@ use containerd_shim_wasm::sandbox::{
     EngineGetter, Error, Instance, ShimCli,
 };
 use libc::{SIGINT, SIGKILL, STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
-use libcontainer::container::builder::ContainerBuilder;
-use libcontainer::syscall::syscall::SyscallType;
+use libcontainer::{
+    container::builder::ContainerBuilder, oci_spec::runtime::Spec
+};
+
 use log::error;
 use nix::errno::Errno;
 use nix::sys::wait::{waitid, Id as WaitID, WaitPidFlag, WaitStatus};
@@ -227,7 +232,14 @@ impl MyContainer {
         }
 
         let container = ContainerBuilder::new(self.id.clone(), syscall)
-            .with_executor(libcontainer::workload::default::get_executor())
+            .with_executor(Box::new(|spec: &Spec| -> Result<(), ExecutorError> {
+                match youki_wasmedge_executor::get_executor()(spec) {
+                    Ok(_) => return Ok(()),
+                    Err(ExecutorError::CantHandle(_)) => (),
+                    Err(err) => return Err(err),
+                }
+                libcontainer::workload::default::get_executor()(spec)
+            }))
             .with_root_path(self.rootdir.clone())?
             .as_init(&self.bundle)
             .with_systemd(false)
