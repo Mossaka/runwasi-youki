@@ -18,10 +18,8 @@ use containerd_shim_wasm::sandbox::{
     EngineGetter, Error, Instance, ShimCli,
 };
 use libc::{SIGINT, SIGKILL, STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
-use libcontainer::{
-    container::builder::ContainerBuilder, syscall::syscall::create_syscall,
-    workload::default::DefaultExecutor,
-};
+use libcontainer::container::builder::ContainerBuilder;
+use libcontainer::syscall::syscall::SyscallType;
 use log::error;
 use nix::errno::Errno;
 use nix::sys::wait::{waitid, Id as WaitID, WaitPidFlag, WaitStatus};
@@ -205,7 +203,7 @@ fn maybe_open_stdio(path: &str) -> Result<Option<RawFd>, Error> {
 
 impl MyContainer {
     fn build_executor(&self) -> Result<Container> {
-        let syscall = create_syscall();
+        let syscall = SyscallType::default();
         fs::create_dir_all(&self.rootdir)?;
         // verify that roodir is created
         assert!(self.rootdir.exists());
@@ -228,8 +226,8 @@ impl MyContainer {
             dup2(stderr, STDERR_FILENO)?;
         }
 
-        let container = ContainerBuilder::new(self.id.clone(), syscall.as_ref())
-            .with_executor(vec![Box::<DefaultExecutor>::default()])?
+        let container = ContainerBuilder::new(self.id.clone(), syscall)
+            .with_executor(libcontainer::workload::default::get_executor())
             .with_root_path(self.rootdir.clone())?
             .as_init(&self.bundle)
             .with_systemd(false)
